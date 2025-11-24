@@ -15,7 +15,7 @@ import requests.packages.urllib3
 from urllib.parse import urlparse, parse_qs
 import asyncio 
 from concurrent.futures import ThreadPoolExecutor 
-from datetime import datetime, timezone, timedelta # ✅ FIX LỖI: Import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta # ✅ FIX TRIỆT ĐỂ: Import datetime, timezone, timedelta
 
 # Import thư viện cần thiết cho các dịch vụ dựa trên HTML/Scraping
 try:
@@ -138,8 +138,7 @@ TOKEN = os.environ.get("DISCORD_TOKEN") # ✅ FIX TRIỆT ĐỂ 3: Đọc Token 
 
 if not TOKEN: 
     print("❌ LỖI KHẨN CẤP: Không tìm thấy Token Discord. Vui lòng đặt biến môi trường DISCORD_TOKEN trên Render.")
-    # Không exit() nữa, mà cho bot crash (render sẽ báo lỗi)
-
+    
 # Thiết lập Intents và Bot
 intents = discord.Intents.default()
 # Khởi tạo Guild cho Sync nhanh
