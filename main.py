@@ -4,6 +4,8 @@ from discord import app_commands
 import requests
 import os
 import sqlite3
+import random # Dùng để tạo mật khẩu ngẫu nhiên
+import string
 
 # --- Cấu hình & Database ---
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN") 
@@ -42,6 +44,10 @@ def save_user_email(user_id, email, account_id, auth_token):
     conn.commit()
     conn.close()
 
+def generate_safe_password(length=12):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(random.choice(characters) for i in range(length))
+
 # --- Khởi tạo Bot ---
 init_db()
 
@@ -74,23 +80,35 @@ async def layemail(interaction: discord.Interaction):
         return
 
     try:
-        # Tạo tài khoản email
-        response = requests.post(f"{API_BASE_URL}/accounts", 
-                                 json={"address": "", "password": "temp_password_123"},
-                                 headers={"Content-Type": "application/json"})
-        response.raise_for_status() 
-        account_data = response.json()
+        ACCOUNT_PASSWORD = generate_safe_password() 
         
+        # 1. TẠO TÀI KHOẢN (Status code phải là 201)
+        response = requests.post(
+            f"{API_BASE_URL}/accounts", 
+            json={"address": "", "password": ACCOUNT_PASSWORD},
+            headers={"Content-Type": "application/json"}
+        )
+        if response.status_code != 201:
+            print(f"LỖI TẠO TÀI KHOẢN ({response.status_code}): {response.text}")
+            await interaction.followup.send("❌ Lỗi API: Không thể tạo tài khoản email ảo. Vui lòng kiểm tra console.")
+            return
+
+        account_data = response.json()
         email_address = account_data['address']
         account_id = account_data['id']
         
-        # Đăng nhập lấy Token
-        login_response = requests.post(f"{API_BASE_URL}/token",
-                                       json={"address": email_address, "password": "temp_password_123"},
-                                       headers={"Content-Type": "application/json"})
-        login_response.raise_for_status()
+        # 2. ĐĂNG NHẬP LẤY TOKEN (Status code phải là 200)
+        login_response = requests.post(
+            f"{API_BASE_URL}/token",
+            json={"address": email_address, "password": ACCOUNT_PASSWORD},
+            headers={"Content-Type": "application/json"}
+        )
+        if login_response.status_code != 200:
+            print(f"LỖI LẤY TOKEN ({login_response.status_code}): {login_response.text}")
+            await interaction.followup.send("❌ Lỗi API: Không thể lấy token truy cập. Vui lòng kiểm tra console.")
+            return
+
         token_data = login_response.json()
-        
         auth_token = token_data['token']
         
         # Lưu vào DATABASE
@@ -103,11 +121,11 @@ async def layemail(interaction: discord.Interaction):
         )
 
     except requests.exceptions.RequestException as e:
-        print(f"Lỗi API khi lấy email: {e}")
-        await interaction.followup.send("❌ Đã xảy ra lỗi khi kết nối với dịch vụ email ảo. Vui lòng thử lại sau.")
+        print(f"LỖI KẾT NỐI MẠNG: {e}")
+        await interaction.followup.send("❌ Lỗi kết nối mạng hoặc dịch vụ email ảo không khả dụng. Vui lòng thử lại sau.")
     except Exception as e:
-        print(f"Lỗi không xác định: {e}")
-        await interaction.followup.send("❌ Đã xảy ra lỗi không xác định.")
+        print(f"LỖI KHÔNG XÁC ĐỊNH: {e}")
+        await interaction.followup.send("❌ Đã xảy ra lỗi không xác định. Vui lòng kiểm tra console bot.")
 
 # --- Lệnh /xemthu ---
 @bot.tree.command(name="xemthu", description="Kiểm tra hộp thư của email ảo đã lưu.")
@@ -124,13 +142,18 @@ async def xemthu(interaction: discord.Interaction):
     email_address, account_id, auth_token = email_data
     
     try:
-        # Lấy danh sách thư
         headers = {
             "Authorization": f"Bearer {auth_token}",
             "Content-Type": "application/json"
         }
         response = requests.get(f"{API_BASE_URL}/messages", headers=headers)
-        response.raise_for_status()
+        
+        # Kiểm tra trạng thái phản hồi
+        if response.status_code != 200:
+            print(f"LỖI LẤY THƯ ({response.status_code}): {response.text}")
+            await interaction.followup.send("❌ Lỗi API: Không thể lấy thư. Có thể token đã hết hạn hoặc tài khoản bị xóa.")
+            return
+
         messages = response.json().get('hydra:member', [])
         
         if not messages:
@@ -143,7 +166,6 @@ async def xemthu(interaction: discord.Interaction):
             color=discord.Color.blue()
         )
         
-        # Hiển thị 5 thư mới nhất
         for i, message in enumerate(messages[:5]): 
             subject = message.get('subject', '(Không có tiêu đề)')
             sender = message.get('from', {}).get('address', 'Ẩn danh')
@@ -161,11 +183,11 @@ async def xemthu(interaction: discord.Interaction):
         await interaction.followup.send(embed=embed)
 
     except requests.exceptions.RequestException as e:
-        print(f"Lỗi API khi xem thư: {e}")
-        await interaction.followup.send("❌ Đã xảy ra lỗi khi kiểm tra hộp thư. Vui lòng thử lại sau.")
+        print(f"LỖI KẾT NỐI MẠNG: {e}")
+        await interaction.followup.send("❌ Lỗi kết nối mạng hoặc dịch vụ email ảo không khả dụng.")
     except Exception as e:
-        print(f"Lỗi không xác định: {e}")
-        await interaction.followup.send("❌ Đã xảy ra lỗi không xác định.")
+        print(f"LỖI KHÔNG XÁC ĐỊNH: {e}")
+        await interaction.followup.send("❌ Đã xảy ra lỗi không xác định. Vui lòng kiểm tra console bot.")
 
 # --- Chạy Bot ---
 if BOT_TOKEN:
