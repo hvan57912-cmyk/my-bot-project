@@ -4,7 +4,7 @@ from discord import app_commands
 import requests
 import os
 import sqlite3
-import random # Dùng để tạo mật khẩu ngẫu nhiên
+import random
 import string
 
 # --- Cấu hình & Database ---
@@ -82,7 +82,6 @@ async def layemail(interaction: discord.Interaction):
     try:
         ACCOUNT_PASSWORD = generate_safe_password() 
         
-        # 1. TẠO TÀI KHOẢN (Status code phải là 201)
         response = requests.post(
             f"{API_BASE_URL}/accounts", 
             json={"address": "", "password": ACCOUNT_PASSWORD},
@@ -97,7 +96,6 @@ async def layemail(interaction: discord.Interaction):
         email_address = account_data['address']
         account_id = account_data['id']
         
-        # 2. ĐĂNG NHẬP LẤY TOKEN (Status code phải là 200)
         login_response = requests.post(
             f"{API_BASE_URL}/token",
             json={"address": email_address, "password": ACCOUNT_PASSWORD},
@@ -111,7 +109,6 @@ async def layemail(interaction: discord.Interaction):
         token_data = login_response.json()
         auth_token = token_data['token']
         
-        # Lưu vào DATABASE
         save_user_email(user_id, email_address, account_id, auth_token)
         
         await interaction.followup.send(
@@ -148,7 +145,6 @@ async def xemthu(interaction: discord.Interaction):
         }
         response = requests.get(f"{API_BASE_URL}/messages", headers=headers)
         
-        # Kiểm tra trạng thái phản hồi
         if response.status_code != 200:
             print(f"LỖI LẤY THƯ ({response.status_code}): {response.text}")
             await interaction.followup.send("❌ Lỗi API: Không thể lấy thư. Có thể token đã hết hạn hoặc tài khoản bị xóa.")
@@ -189,9 +185,15 @@ async def xemthu(interaction: discord.Interaction):
         print(f"LỖI KHÔNG XÁC ĐỊNH: {e}")
         await interaction.followup.send("❌ Đã xảy ra lỗi không xác định. Vui lòng kiểm tra console bot.")
 
-# --- Chạy Bot ---
+# --- 4. Chạy Bot (ĐÃ FIX LỖI ĐĂNG NHẬP) ---
 if BOT_TOKEN:
-    bot.run(BOT_TOKEN)
+    try:
+        bot.run(BOT_TOKEN)
+    except discord.errors.LoginFailure:
+        # Nếu Token sai, bot sẽ in ra lỗi này thay vì crash và restart liên tục
+        print("❌ LỖI ĐĂNG NHẬP (LoginFailure): Token Discord không hợp lệ. Vui lòng kiểm tra lại DISCORD_BOT_TOKEN.")
+    except Exception as e:
+        print(f"❌ LỖI KHÔNG THỂ XỬ LÝ (Unhandled Exception): {e}")
 else:
-    print("❌ Lỗi: Thiếu biến môi trường DISCORD_BOT_TOKEN.")
+    print("❌ LỖI CẤU HÌNH: Thiếu biến môi trường DISCORD_BOT_TOKEN.")
     
