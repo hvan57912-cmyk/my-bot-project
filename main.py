@@ -10,12 +10,13 @@ import smtplib
 from email.message import EmailMessage 
 import html 
 import jwt 
-from gevent.threadpool import ThreadPool
+# import gevent # ❌ LOẠI BỎ: Bỏ Gevent để tránh lỗi cài đặt
+# from gevent.threadpool import ThreadPool # ❌ LOẠI BỎ: Bỏ Gevent để tránh lỗi cài đặt
 import requests.packages.urllib3 
 from urllib.parse import urlparse, parse_qs
 import asyncio 
-from concurrent.futures import ThreadPoolExecutor 
-from datetime import datetime, timezone, timedelta # ✅ FIX TRIỆT ĐỂ: Import datetime, timezone, timedelta
+from concurrent.futures import ThreadPoolExecutor # ✅ GIỮ LẠI: Dùng ThreadPoolExecutor chuẩn
+from datetime import datetime, timezone, timedelta # ✅ FIX TRIỆT ĐỂ 1: Import datetime
 
 # Import thư viện cần thiết cho các dịch vụ dựa trên HTML/Scraping
 try:
@@ -34,7 +35,7 @@ MAX_RETRIES = 5 # Số lần thử lại tối đa
 
 # ID SERVER CỦA BẠN (Sử dụng biến môi trường DISCORD_GUILD_ID khi deploy lên Render)
 # Đảm bảo bạn đã thay thế "1438026770975559792" bằng ID Server Discord thật của bạn.
-GUILD_ID = int(os.environ.get("DISCORD_GUILD_ID", "1438026770975559792")) # ✅ FIX TRIỆT ĐỂ 1: Đọc GUILD_ID từ Biến Môi Trường
+GUILD_ID = int(os.environ.get("DISCORD_GUILD_ID", "1438026770975559792")) 
 
 # --- DANH SÁCH DỊCH VỤ ROUND ROBIN MỚI (24 Dịch vụ Siêu Phân Tán) ---
 API_PROVIDERS_LIST = [
@@ -49,7 +50,7 @@ NUM_PROVIDERS = len(API_PROVIDERS_LIST)
 # --- CẤU HÌNH PROXY & THREAD POOL ---
 PROXY_SCRAPER_API = "https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=5000&country=all&ssl=yes&anonymity=elite" 
 PROXY_DUMMY_API = "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt" 
-THREAD_POOL_EXECUTOR = ThreadPoolExecutor(max_workers=50) 
+THREAD_POOL_EXECUTOR = ThreadPoolExecutor(max_workers=50) # ✅ FIX TRIỆT ĐỂ 2: Dùng ThreadPoolExecutor chuẩn
 
 # --- CẤU HÌNH API CHI TIẾT (Giữ nguyên) ---
 ONECMAIL_API_BASE_URL = "https://www.1secmail.com/api/v1/"
@@ -130,11 +131,11 @@ REFERERS = [
 # THAY THẾ bằng thông tin SMTP của bạn
 SMTP_SERVER = "smtp.gmail.com"  
 SENDER_EMAIL = "phancongtu704@gmail.com" # Thay bằng Email Gửi của bạn
-SENDER_PASSWORD = os.environ.get("SMTP_APP_PASSWORD") # ✅ FIX TRIỆT ĐỂ 2: Đọc Mật khẩu SMTP từ Biến Môi Trường
+SENDER_PASSWORD = os.environ.get("SMTP_APP_PASSWORD") # ✅ Đọc Mật khẩu SMTP từ Biến Môi Trường
 SMTP_PORT = 587
 
 # --- Đọc Token Discord từ Biến Môi Trường (Cho Render) ---
-TOKEN = os.environ.get("DISCORD_TOKEN") # ✅ FIX TRIỆT ĐỂ 3: Đọc Token từ Biến Môi Trường
+TOKEN = os.environ.get("DISCORD_TOKEN") 
 
 if not TOKEN: 
     print("❌ LỖI KHẨN CẤP: Không tìm thấy Token Discord. Vui lòng đặt biến môi trường DISCORD_TOKEN trên Render.")
@@ -319,7 +320,7 @@ def update_user_cooldown(user_id):
 def make_api_request_blocking(user_id, method, url, data=None, token=None, params=None):
     """
     Thực hiện request API ở chế độ Siêu An toàn (Blocking/Sync Version).
-    Phiên bản V12.2: Ưu tiên Proxy cho các API Scraping/HTML.
+    Phiên bản V12.3: Đã loại bỏ Gevent.
     """
     
     global ACTIVE_PROXIES
@@ -476,6 +477,8 @@ async def make_api_request(user_id, method, url, data=None, token=None, params=N
 # =================================================================
 # 📧 HÀM API EMAIL ẢO 
 # =================================================================
+
+# ... (Giữ nguyên toàn bộ các hàm API Email ảo) ...
 
 async def create_1secmail_email(user_id):
     username = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=10))
@@ -1242,6 +1245,7 @@ async def check_hackermail_inbox(user_id, username, domain):
         formatted_messages.append({'from': sender, 'subject': subject, 'body': body_snippet})
             
     return formatted_messages
+# ... (Kết thúc các hàm API Email ảo) ...
 
 # =================================================================
 # 🔄 HÀM ROUND ROBIN VÀ CHECK INBOX CHUNG
@@ -1744,7 +1748,7 @@ async def show_providers_slash(interaction: discord.Interaction):
         embed.add_field(name=field_name, value=field_value, inline=True)
         
     embed.add_field(
-        name="🛡️ Cơ Chế Phòng Thủ IP Cao Cấp (V12.2)",
+        name="🛡️ Cơ Chế Phòng Thủ IP Cao Cấp (V12.3)",
         value=f"Các dịch vụ **Scraping (HTML)** được ưu tiên sử dụng Proxy mới liên tục để tránh bị chặn IP gốc, giúp duy trì tính năng **`/checkemail`** bền bỉ hơn.",
         inline=False
     )
