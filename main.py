@@ -15,7 +15,7 @@ import requests.packages.urllib3
 from urllib.parse import urlparse, parse_qs
 import asyncio 
 from concurrent.futures import ThreadPoolExecutor 
-from datetime import datetime, timezone, timedelta # ✅ FIX LỖI 1: Thêm import datetime, timedelta
+from datetime import datetime, timezone, timedelta # ✅ FIX LỖI NHỎ: Thêm import datetime, timezone, timedelta
 
 # Import thư viện cần thiết cho các dịch vụ dựa trên HTML/Scraping
 try:
@@ -130,11 +130,11 @@ REFERERS = [
 # THAY THẾ bằng thông tin SMTP của bạn
 SMTP_SERVER = "smtp.gmail.com"  
 SENDER_EMAIL = "phancongtu704@gmail.com" 
-SENDER_PASSWORD = os.environ.get("SMTP_APP_PASSWORD") # ✅ FIX LỖI 3: Đọc Mật khẩu SMTP từ Biến Môi Trường
+SENDER_PASSWORD = os.environ.get("SMTP_APP_PASSWORD") # ✅ FIX LỖ 3: Đọc Mật khẩu SMTP từ Biến Môi Trường
 SMTP_PORT = 587
 
 # --- Đọc Token Discord từ Biến Môi Trường (Cho Render) ---
-TOKEN = os.environ.get("DISCORD_TOKEN") # ✅ FIX LỖI 4: Đọc Token từ Biến Môi Trường
+TOKEN = os.environ.get("DISCORD_TOKEN") # ✅ FIX LỖ 4: Đọc Token từ Biến Môi Trường
 
 if not TOKEN: 
     print("❌ LỖI KHẨN CẤP: Không tìm thấy Token Discord. Vui lòng đặt biến môi trường DISCORD_TOKEN trên Render.")
