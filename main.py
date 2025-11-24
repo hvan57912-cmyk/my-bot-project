@@ -15,7 +15,7 @@ import requests.packages.urllib3
 from urllib.parse import urlparse, parse_qs
 import asyncio 
 from concurrent.futures import ThreadPoolExecutor 
-from datetime import datetime, timezone, timedelta # ✅ FIX LỖI NHỎ: Thêm import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta # ✅ FIX LỖI: Import datetime, timezone, timedelta
 
 # Import thư viện cần thiết cho các dịch vụ dựa trên HTML/Scraping
 try:
@@ -26,7 +26,7 @@ except ImportError:
 
 
 # =================================================================
-# ⚙️ CẤU HÌNH HỆ THỐNG VÀ API (ĐÃ CẬP NHẬT GUILD_ID CỦA BẠN)
+# ⚙️ CẤU HÌNH HỆ THỐNG VÀ API (FIX TRIỆT ĐỂ CHO RENDER)
 # =================================================================
 STORAGE_FILE = 'active_emails.json'
 DEFAULT_EXPIRY = 315360000  # 10 năm (Chủ yếu để giữ trạng thái)
@@ -34,7 +34,7 @@ MAX_RETRIES = 5 # Số lần thử lại tối đa
 
 # ID SERVER CỦA BẠN (Sử dụng biến môi trường DISCORD_GUILD_ID khi deploy lên Render)
 # Đảm bảo bạn đã thay thế "1438026770975559792" bằng ID Server Discord thật của bạn.
-GUILD_ID = int(os.environ.get("DISCORD_GUILD_ID", "1438026770975559792")) # ✅ FIX LỖI 2: Đọc GUILD_ID từ Biến Môi Trường
+GUILD_ID = int(os.environ.get("DISCORD_GUILD_ID", "1438026770975559792")) # ✅ FIX TRIỆT ĐỂ 1: Đọc GUILD_ID từ Biến Môi Trường
 
 # --- DANH SÁCH DỊCH VỤ ROUND ROBIN MỚI (24 Dịch vụ Siêu Phân Tán) ---
 API_PROVIDERS_LIST = [
@@ -129,17 +129,16 @@ REFERERS = [
 
 # THAY THẾ bằng thông tin SMTP của bạn
 SMTP_SERVER = "smtp.gmail.com"  
-SENDER_EMAIL = "phancongtu704@gmail.com" 
-SENDER_PASSWORD = os.environ.get("SMTP_APP_PASSWORD") # ✅ FIX LỖ 3: Đọc Mật khẩu SMTP từ Biến Môi Trường
+SENDER_EMAIL = "phancongtu704@gmail.com" # Thay bằng Email Gửi của bạn
+SENDER_PASSWORD = os.environ.get("SMTP_APP_PASSWORD") # ✅ FIX TRIỆT ĐỂ 2: Đọc Mật khẩu SMTP từ Biến Môi Trường
 SMTP_PORT = 587
 
 # --- Đọc Token Discord từ Biến Môi Trường (Cho Render) ---
-TOKEN = os.environ.get("DISCORD_TOKEN") # ✅ FIX LỖ 4: Đọc Token từ Biến Môi Trường
+TOKEN = os.environ.get("DISCORD_TOKEN") # ✅ FIX TRIỆT ĐỂ 3: Đọc Token từ Biến Môi Trường
 
 if not TOKEN: 
     print("❌ LỖI KHẨN CẤP: Không tìm thấy Token Discord. Vui lòng đặt biến môi trường DISCORD_TOKEN trên Render.")
     # Không exit() nữa, mà cho bot crash (render sẽ báo lỗi)
-    # exit()
 
 # Thiết lập Intents và Bot
 intents = discord.Intents.default()
